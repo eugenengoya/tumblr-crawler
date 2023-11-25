@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import sys
 import requests
@@ -8,7 +6,6 @@ from six.moves import queue as Queue
 from threading import Thread
 import re
 import json
-
 
 # Setting timeout
 TIMEOUT = 10
@@ -105,44 +102,56 @@ class DownloadWorker(Thread):
 
     def _download(self, medium_type, medium_url, target_folder):
         medium_name = medium_url.split("/")[-1].split("?")[0]
+
         if medium_type == "video":
             if not medium_name.startswith("tumblr"):
-                medium_name = "_".join([medium_url.split("/")[-2],
-                                        medium_name])
+                medium_name = "_".join(
+                    [medium_url.split("/")[-2], medium_name])
 
             medium_name += ".mp4"
             medium_url = 'https://vt.tumblr.com/' + medium_name
 
         file_path = os.path.join(target_folder, medium_name)
-        if not os.path.isfile(file_path):
-            print("Downloading %s from %s.\n" % (medium_name,
-                                                 medium_url))
-            retry_times = 0
-            while retry_times < RETRY:
-                try:
-                    resp = requests.get(medium_url,
-                                        stream=True,
-                                        proxies=self.proxies,
-                                        timeout=TIMEOUT)
-                    if resp.status_code == 403:
-                        retry_times = RETRY
-                        print("Access Denied when retrieve %s.\n" % medium_url)
-                        raise Exception("Access Denied")
-                    with open(file_path, 'wb') as fh:
-                        for chunk in resp.iter_content(chunk_size=1024):
-                            fh.write(chunk)
-                    break
-                except:
-                    # try again
-                    pass
-                retry_times += 1
-            else:
-                try:
-                    os.remove(file_path)
-                except OSError:
-                    pass
-                print("Failed to retrieve %s from %s.\n" % (medium_type,
-                                                            medium_url))
+
+        # Check if the file has already been downloaded by checking the log
+        downloaded_files_log = os.path.join(
+            target_folder, "downloaded_files.txt")
+        if os.path.exists(downloaded_files_log):
+            with open(downloaded_files_log, 'r') as log_file:
+                downloaded_files = log_file.read().splitlines()
+                if medium_name in downloaded_files:
+                    # print(f"File {medium_name} has already been downloaded. Skipping.")
+                    return
+
+        print("Downloading %s from %s.\n" % (medium_name, medium_url))
+        retry_times = 0
+
+        while retry_times < RETRY:
+            try:
+                resp = requests.get(medium_url, stream=True,
+                                    proxies=self.proxies, timeout=TIMEOUT)
+                if resp.status_code == 403:
+                    retry_times = RETRY
+                    print("Access Denied when retrieving %s.\n" % medium_url)
+                    raise Exception("Access Denied")
+                with open(file_path, 'wb') as fh:
+                    for chunk in resp.iter_content(chunk_size=1024):
+                        fh.write(chunk)
+                # Update the log of downloaded files
+                with open(downloaded_files_log, 'a') as log_file:
+                    log_file.write(medium_name + "\n")
+                break
+            except:
+                # try again
+                pass
+            retry_times += 1
+        else:
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+            print("Failed to retrieve %s from %s.\n" %
+                  (medium_type, medium_url))
 
 
 class CrawlerScheduler(object):
@@ -201,10 +210,15 @@ class CrawlerScheduler(object):
                 break
 
             try:
+                xml_folder = "{0}/{0}_logs".format(site)
+                if not os.path.exists(xml_folder):
+                    os.makedirs(xml_folder)
+
                 xml_cleaned = re.sub(u'[^\x20-\x7f]+',
                                      u'', response.content.decode('utf-8'))
 
-                response_file = "{0}/{0}_{1}_{2}_{3}.response.xml".format(site, medium_type, MEDIA_NUM, start)
+                response_file = "{0}/{1}_{2}_{3}_{4}.response.xml".format(
+                    xml_folder, site, medium_type, MEDIA_NUM, start)
                 with open(response_file, "w") as text_file:
                     text_file.write(xml_cleaned)
 
@@ -214,7 +228,8 @@ class CrawlerScheduler(object):
                     # by default it is switched to false to generate less files,
                     # as anyway you can extract this from bulk xml files.
                     if EACH_POST_AS_SEPARATE_JSON:
-                        post_json_file = "{0}/{0}_post_id_{1}.post.json".format(site, post['@id'])
+                        post_json_file = "{0}/{0}_post_id_{1}.post.json".format(
+                            site, post['@id'])
                         with open(post_json_file, "w") as text_file:
                             text_file.write(json.dumps(post))
 
@@ -246,21 +261,12 @@ def usage():
           "Sample File Content:\nsite1,site2\n\n"
           "Or use command line options:\n\n"
           "Sample:\npython tumblr-photo-video-ripper.py site1,site2\n\n\n")
-    print(u"未找到sites.txt文件，请创建.\n"
-          u"请在文件中指定Tumblr站点名，并以 逗号/空格/tab/表格鍵/回车符 分割，支持多行.\n"
-          u"保存文件并重试.\n\n"
-          u"例子: site1,site2\n\n"
-          u"或者直接使用命令行参数指定站点\n"
-          u"例子: python tumblr-photo-video-ripper.py site1,site2")
 
 
 def illegal_json():
     print("Illegal JSON format in file 'proxies.json'.\n"
           "Please refer to 'proxies_sample1.json' and 'proxies_sample2.json'.\n"
           "And go to http://jsonlint.com/ for validation.\n\n\n")
-    print(u"文件proxies.json格式非法.\n"
-          u"请参照示例文件'proxies_sample1.json'和'proxies_sample2.json'.\n"
-          u"然后去 http://jsonlint.com/ 进行验证.")
 
 
 def parse_sites(filename):

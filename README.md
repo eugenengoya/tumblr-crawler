@@ -4,13 +4,6 @@ tumblr-crawler
 This is a [Python](https://www.python.org) script that you can easily download
 all the photos and videos from your favorite tumblr blogs.
 
-## 中文版教程请[移步这里](./README_CN.md)
-
-## How to Discuss
-
-* Feel free to join our [Slack](https://join.slack.com/t/tumblr-crawler/shared_invite/enQtMzM0MTM1MzkwMDM0LTY0OTg2ZTk0MGI5NTU4NDRlYjc4ZDM3OWIxYmE2ZWJhMTdkZmQxYmM0ZWVhYWJmMjM3MTkwMTkxMTQwYTk4ZDk), where you can ask questions and help answer them on Slack.
-* Also you can open new issue on [Github](https://github.com/dixudx/tumblr-crawler/issues/new)
-
 ## Prerequisite
 
 #### For Programmers and Developers
@@ -20,13 +13,12 @@ You know how to install `Python` and `pip`. Then `pip install requests xmltodict
 or
 
 ```bash
-$ git clone https://github.com/dixudx/tumblr-crawler.git
-$ cd tumblr-crawler
-$ pip install -r requirements.txt
+git clone https://github.com/dixudx/tumblr-crawler.git
+cd tumblr-crawler
+pip install -r requirements.txt
 ```
 
 #### For non-programmers
-
 
 * Installing Python: refer to [this guide](http://docs.python-guide.org/en/latest/starting/installation/)
 
@@ -34,9 +26,6 @@ $ pip install -r requirements.txt
 
 * Run `pip install xmltodict six "requests>=2.10.0" "PySocks>=1.5.6"` in your terminal ([Windows terminal](http://windows.microsoft.com/en-us/windows-vista/open-a-command-prompt-window),
 [Mac OS terminal](http://www.howtogeek.com/210147/how-to-open-terminal-in-the-current-os-x-finder-location/))
-
-* Download the [zip file](https://github.com/dixudx/tumblr-crawler/archive/master.zip) and Unzip.
-
 
 ## Configuration and Downloading
 
@@ -73,26 +62,6 @@ This script will **not re-download** the photos or videos
 if they have already been downloaded. So it will **do no harm** by running this
 script several times. In the meanwhile, you can find back the **missing** photos
 or videos.
-
-
-### Use Proxies (Optional)
-
-You may want to use proxies when downloading. Please refer to `./proxies_sample1.json` and `./proxies_sample2.json`.
-And save your own proxies to `./proxies.json` in json format.
-You can validate the content by visiting <http://jsonlint.com/>.
-
-If `./proxies.json` is an empty file, no proxies will be used during downloading.
-
-If you are using Shadowsocks with global mode, your `./proxies.json` can be,
-
-```json
-{
-    "http": "socks5://127.0.0.1:1080",
-    "https": "socks5://127.0.0.1:1080"
-}
-```
-
-And now you can enjoy your downloads.
 
 
 ### More customizations for Programmers Only
